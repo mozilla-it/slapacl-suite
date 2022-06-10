@@ -1,0 +1,45 @@
+---
+administrative:
+  name: 'production'
+  DN_substitutions_key: 'SUB:'
+  DN_substitutions:
+    foo_person: 'uid=foo,ou=logins,dc=example'
+    bar_person: 'uid=bar,ou=logins,dc=example'
+scripting:
+  executable: 'slapacl'
+  path:
+    - '/usr/local/sbin'
+    - '/usr/sbin'
+  default_arguments:
+    - '-F'
+    - '/etc/openldap/slapd.d'
+tests:
+  - description: 'anonymous may auth from anywhere'
+    requestDN: 'uid=binder,ou=logins,dc=example'
+    requestattr: 'userPassword/auth'
+    expects: 'ALLOWED'
+  - description: 'a user can search for someone from two IPs'
+    authcDN: 'SUB:foo_person'
+    requestDN: 'uid=someone,ou=logins,dc=example'
+    requestattr: 'uid/search'
+    peername:
+      - '10.20.30.40'
+      - '20.40.60.80'
+    expects: 'ALLOWED'
+  - description: 'baz can not read quux from one IP'
+    authcDN: 'uid=baz,ou=logins,dc=example'
+    requestDN: 'uid=quux,ou=logins,dc=example'
+    requestattr: 'uid/read'
+    peername: '1.2.3.4'
+    expects: 'DENIED'
+  - description: 'frob can make a new user over SSL'
+    authcDN: 'uid=frob,ou=logins,dc=example'
+    requestDN: 'uid=newguy,ou=logins,dc=example'
+    requestattr:
+      - 'entry/add'
+      - 'uid/add'
+      - 'objectClass/add'
+    fetchentry: false
+    ssf: 128
+    peername: '1.2.3.4'
+    expects: 'ALLOWED'
