@@ -4,7 +4,6 @@
 
 '''
 import sys
-import re
 
 
 class AdministrativeSectionValidator:
@@ -106,12 +105,12 @@ class AdministrativeSectionValidator:
         subkey = self.inputs['DN_substitutions_key']
         subs = self.inputs['DN_substitutions']
 
-        if not re.match(subkey, string_in):
+        if not string_in.startswith(subkey):
             # We're never going to match in order to do a substitution...
             # So no sub happens: return the original.
             return string_in
 
-        possible_key = string_in.replace(subkey, '')
+        possible_key = string_in.replace(subkey, '', 1)
         possible_value = subs.get(possible_key)
         if possible_value is None:
             return string_in
