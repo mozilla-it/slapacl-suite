@@ -7,7 +7,8 @@ slapacl itself is very human oriented, and it's often hard to realize if a chang
 There is an `example.yaml` file included, and there are [docs for its structure](example.yaml.md "example.yaml docs").
 
 ## The script
-`setup.py` will build a `slapaclsuite` executable
+`setup.py` will build a `slapaclsuite` executable.
+
 `usage: slapaclsuite [-h] [--noop] [-v] your_test_file.yaml`
 
 The script will preflight the YAML file for validity, and then run the tests.  `--noop` will print the commands rather than run them.
