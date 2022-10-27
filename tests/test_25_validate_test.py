@@ -101,6 +101,34 @@ class TestTestValidateRequestDN(unittest.TestCase):
         self.assertEqual(result, inputs)
         self.assertIn('## Preflighting ', fake_out.getvalue())
 
+    def test_subs(self):
+        '''
+            substitutions are acceptable for requestDN.
+        '''
+        admin_obj = AdministrativeSectionValidator()
+        admin_obj.validate({
+            'DN_substitutions_key': 'SUB:',
+            'DN_substitutions': {'somebody': 'joe'}})
+        inputs = 'SUB:somebody'
+        with mock.patch('sys.stdout', new=StringIO()) as fake_out:
+            result = self.testfunc(inputs, admin_object=admin_obj, verbose=False)
+        self.assertEqual(result, 'joe')
+        self.assertEqual('', fake_out.getvalue())
+
+    def test_no_subs(self):
+        '''
+            substitutions could be not-declared
+        '''
+        admin_obj = AdministrativeSectionValidator()
+        admin_obj.validate({
+            'DN_substitutions_key': None,
+            'DN_substitutions': {'somebody': 'joe'}})
+        inputs = 'somebody'
+        with mock.patch('sys.stdout', new=StringIO()) as fake_out:
+            result = self.testfunc(inputs, admin_object=admin_obj, verbose=False)
+        self.assertEqual(result, 'somebody')
+        self.assertEqual('', fake_out.getvalue())
+
 
 class TestTestValidateAuthcDN(unittest.TestCase):
     ''' Check TestValidator _validate_authcdn '''
@@ -398,6 +426,34 @@ class TestTestValidatePeername(unittest.TestCase):
             result = self.testfunc(inputs, verbose=True)
         self.assertEqual(result, inputs)
         self.assertIn('## Preflighting ', fake_out.getvalue())
+
+    def test_subs(self):
+        '''
+            substitutions are acceptable for peername.
+        '''
+        admin_obj = AdministrativeSectionValidator()
+        admin_obj.validate({
+            'peername_substitutions_key': 'SUBME:',
+            'peername_substitutions': {'somehost': '10.20.30.40'}})
+        inputs = 'SUBME:somehost'
+        with mock.patch('sys.stdout', new=StringIO()) as fake_out:
+            result = self.testfunc(inputs, admin_object=admin_obj, verbose=False)
+        self.assertEqual(result, ['10.20.30.40'])
+        self.assertEqual('', fake_out.getvalue())
+
+    def test_no_subs(self):
+        '''
+            substitutions could be not-declared
+        '''
+        admin_obj = AdministrativeSectionValidator()
+        admin_obj.validate({
+            'peername_substitutions_key': None,
+            'peername_substitutions': {'somehost': '10.20.30.40'}})
+        inputs = 'somehost'
+        with mock.patch('sys.stdout', new=StringIO()) as fake_out:
+            result = self.testfunc(inputs, admin_object=admin_obj, verbose=False)
+        self.assertEqual(result, ['somehost'])
+        self.assertEqual('', fake_out.getvalue())
 
 
 class TestTestValidateDescription(unittest.TestCase):

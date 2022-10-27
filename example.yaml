@@ -5,6 +5,10 @@ administrative:
   DN_substitutions:
     foo_person: 'uid=foo,ou=logins,dc=example'
     bar_person: 'uid=bar,ou=logins,dc=example'
+  peername_substitutions_key: 'IPFOR:'
+  peername_substitutions:
+    adminhost: '10.20.30.40'
+    externalhost: '8.8.8.8'
 scripting:
   executable: 'slapacl'
   path:
@@ -23,7 +27,7 @@ tests:
     requestDN: 'uid=someone,ou=logins,dc=example'
     requestattr: 'uid/search'
     peername:
-      - '10.20.30.40'
+      - 'IPFOR:adminhost'
       - '20.40.60.80'
     expects: 'ALLOWED'
   - description: 'baz can not read quux from one IP'

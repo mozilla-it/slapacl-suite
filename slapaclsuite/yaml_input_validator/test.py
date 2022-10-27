@@ -154,7 +154,7 @@ class TestValidator:
             value_out = value_in
         return value_out
 
-    def _validate_peername(self, value_in, verbose=False, **_kwargs):
+    def _validate_peername(self, value_in, admin_object=None, verbose=False):
         '''
             Validate the peername that we will simulate as 'the query came from'
             Inputs: None or String+ or [String+]+
@@ -170,18 +170,25 @@ class TestValidator:
             value_out = None
         elif isinstance(value_in, str):
             if value_in:
-                value_out = [value_in]
+                if admin_object is not None:
+                    value_out = [admin_object.possible_peername_substitutions(value_in)]
+                else:
+                    value_out = [value_in]
             else:
                 raise ValueError(f'"{my_field}" can not be an empty string.')
         elif isinstance(value_in, list):
             if not value_in:
                 raise ValueError(f'"{my_field}" should not be an empty list.')
+            value_out = []
             for item in value_in:
                 if not isinstance(item, str):
                     raise ValueError(f'"{my_field}" in a test must be a string.')
                 if not item:
                     raise ValueError(f'"{my_field}" can not be an empty string.')
-            value_out = value_in
+                if admin_object is not None:
+                    value_out.append(admin_object.possible_peername_substitutions(item))
+                else:
+                    value_out.append(item)
         else:
             raise ValueError(f'"{my_field}" in a test must be a string or list of strings.')
         return value_out

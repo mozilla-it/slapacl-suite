@@ -54,13 +54,8 @@ class TestAdminValidateName(unittest.TestCase):
         self.assertIn('## Preflighting ', fake_out.getvalue())
 
 
-class TestAdminValidateDNSubKey(unittest.TestCase):
-    ''' Check AdministrativeSectionValidator _validate_dn_sub_key '''
-
-    def setUp(self):
-        ''' define our testfunc for simple reading '''
-        library = AdministrativeSectionValidator()
-        self.testfunc = library._validate_dn_sub_key
+class SubKeyMixIn:
+    ''' Check AdministrativeSectionValidator substitution keys '''
 
     def test_none(self):
         '''
@@ -104,13 +99,26 @@ class TestAdminValidateDNSubKey(unittest.TestCase):
         self.assertIn('## Preflighting ', fake_out.getvalue())
 
 
-class TestAdminValidateDNSubs(unittest.TestCase):
-    ''' Check AdministrativeSectionValidator _validate_dn_subs '''
+class TestAdminValidatePeerNameSubKey(unittest.TestCase, SubKeyMixIn):
+    ''' Check AdministrativeSectionValidator _validate_peername_sub_key '''
 
     def setUp(self):
         ''' define our testfunc for simple reading '''
         library = AdministrativeSectionValidator()
-        self.testfunc = library._validate_dn_subs
+        self.testfunc = library._validate_peername_sub_key
+
+
+class TestAdminValidateDNSubKey(unittest.TestCase, SubKeyMixIn):
+    ''' Check AdministrativeSectionValidator _validate_dn_sub_key '''
+
+    def setUp(self):
+        ''' define our testfunc for simple reading '''
+        library = AdministrativeSectionValidator()
+        self.testfunc = library._validate_dn_sub_key
+
+
+class SubsMixIn:
+    ''' Check AdministrativeSectionValidator substitution keys '''
 
     def test_none(self):
         '''
@@ -186,6 +194,24 @@ class TestAdminValidateDNSubs(unittest.TestCase):
         self.assertIn('## Preflighting ', fake_out.getvalue())
 
 
+class TestAdminValidatePeerNameSubs(unittest.TestCase, SubsMixIn):
+    ''' Check AdministrativeSectionValidator _validate_peername_subs '''
+
+    def setUp(self):
+        ''' define our testfunc for simple reading '''
+        library = AdministrativeSectionValidator()
+        self.testfunc = library._validate_peername_subs
+
+
+class TestAdminValidateDNSubs(unittest.TestCase, SubsMixIn):
+    ''' Check AdministrativeSectionValidator _validate_dn_sub_key '''
+
+    def setUp(self):
+        ''' define our testfunc for simple reading '''
+        library = AdministrativeSectionValidator()
+        self.testfunc = library._validate_dn_subs
+
+
 class TestValidateAdministrative(unittest.TestCase):
     ''' Check AdministrativeSectionValidator validate '''
 
@@ -208,16 +234,24 @@ class TestValidateAdministrative(unittest.TestCase):
                 mock.patch.object(AdministrativeSectionValidator,
                                   '_validate_dn_sub_key', return_value='bar') as fake_dskey, \
                 mock.patch.object(AdministrativeSectionValidator,
-                                  '_validate_dn_subs', return_value={}) as fake_ds:
+                                  '_validate_dn_subs', return_value={}) as fake_ds, \
+                mock.patch.object(AdministrativeSectionValidator,
+                                  '_validate_peername_sub_key', return_value='baz') as fake_pnkey, \
+                mock.patch.object(AdministrativeSectionValidator,
+                                  '_validate_peername_subs', return_value={'a':'b'}) as fake_pn:
             result = self.testfunc(inputs)
         fake_name.assert_called_once_with(None)
         fake_dskey.assert_called_once_with(None)
         fake_ds.assert_called_once_with(None)
+        fake_pnkey.assert_called_once_with(None)
+        fake_pn.assert_called_once_with(None)
         self.assertEqual(result, True)
         self.assertEqual(self.library.inputs,
                          {'name': 'foo',
                           'DN_substitutions_key': 'bar',
-                          'DN_substitutions': {}})
+                          'DN_substitutions': {},
+                          'peername_substitutions_key': 'baz',
+                          'peername_substitutions': {'a':'b'}})
 
     def test_int(self):
         ''' Test with a non-dict, which is a simple failure test '''
@@ -237,16 +271,24 @@ class TestValidateAdministrative(unittest.TestCase):
                 mock.patch.object(AdministrativeSectionValidator,
                                   '_validate_dn_sub_key', return_value='bar') as fake_dskey, \
                 mock.patch.object(AdministrativeSectionValidator,
-                                  '_validate_dn_subs', return_value={}) as fake_ds:
+                                  '_validate_dn_subs', return_value={}) as fake_ds, \
+                mock.patch.object(AdministrativeSectionValidator,
+                                  '_validate_peername_sub_key', return_value='baz') as fake_pnkey, \
+                mock.patch.object(AdministrativeSectionValidator,
+                                  '_validate_peername_subs', return_value={'a':'b'}) as fake_pn:
             result = self.testfunc(inputs)
         fake_name.assert_called_once_with(None)
         fake_dskey.assert_called_once_with(None)
         fake_ds.assert_called_once_with(None)
+        fake_pnkey.assert_called_once_with(None)
+        fake_pn.assert_called_once_with(None)
         self.assertEqual(result, True)
         self.assertEqual(self.library.inputs,
                          {'name': 'foo',
                           'DN_substitutions_key': 'bar',
-                          'DN_substitutions': {}})
+                          'DN_substitutions': {},
+                          'peername_substitutions_key': 'baz',
+                          'peername_substitutions': {'a':'b'}})
 
     def test_dict_badval(self):
         '''
@@ -263,7 +305,9 @@ class TestValidateAdministrative(unittest.TestCase):
         '''
         inputs = {'name': 'something',
                   'DN_substitutions_key': 'SUB:',
-                  'DN_substitutions': {'a': 'b'}}
+                  'DN_substitutions': {'a': 'b'},
+                  'peername_substitutions_key': 'IP:',
+                  'peername_substitutions': {'a': 'c'}}
         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
             result = self.testfunc(inputs, verbose=True)
         self.assertEqual(result, True)
@@ -296,11 +340,26 @@ class TestRenderAdministrative(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.testfunc()
 
+    def test_boring(self):
+        ''' Test render passes back good values, silently '''
+        inputs = {'name': 'something',
+                  'DN_substitutions_key': None,
+                  'DN_substitutions': {'a': 'b'},
+                  'peername_substitutions_key': None,
+                  'peername_substitutions': {'a': 'c'}}
+        self.library.validate(inputs)
+        with mock.patch('sys.stdout', new=StringIO()) as fake_out:
+            result = self.testfunc(verbose=False)
+        self.assertEqual(result, inputs)
+        self.assertEqual('', fake_out.getvalue())
+
     def test_ready_quiet(self):
         ''' Test render passes back good values, silently '''
         inputs = {'name': 'something',
                   'DN_substitutions_key': 'SUB:',
-                  'DN_substitutions': {'a': 'b'}}
+                  'DN_substitutions': {'a': 'b'},
+                  'peername_substitutions_key': 'IPFOR:',
+                  'peername_substitutions': {'a': 'c'}}
         self.library.validate(inputs)
         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
             result = self.testfunc(verbose=False)
@@ -311,7 +370,9 @@ class TestRenderAdministrative(unittest.TestCase):
         ''' Test render passes back good values, not-silently '''
         inputs = {'name': 'something',
                   'DN_substitutions_key': 'SUB:',
-                  'DN_substitutions': {'a': 'b'}}
+                  'DN_substitutions': {'a': 'b'},
+                  'peername_substitutions_key': 'IPFOR:',
+                  'peername_substitutions': {'a': 'c'}}
         self.library.validate(inputs)
         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
             result = self.testfunc(verbose=True)

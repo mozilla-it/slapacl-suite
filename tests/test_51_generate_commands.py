@@ -18,6 +18,10 @@ class TestGenerateCommands(unittest.TestCase):
                 'DN_substitutions_key': 'SUB:',
                 'DN_substitutions': {
                     'foo_person': 'uid=foo,ou=logins,dc=example'
+                },
+                'peername_substitutions_key': 'IP_FOR:',
+                'peername_substitutions': {
+                    'stagehost': '1.2.3.4'
                 }
             },
             'scripting': {
@@ -52,7 +56,7 @@ class TestGenerateCommands(unittest.TestCase):
                         'requestDN': 'uid=quux,ou=logins,dc=example',
                         'requestattr': 'uid/read',
                         'fetchentry': True,
-                        'peername': '1.2.3.4',
+                        'peername': 'IP_FOR:stagehost',
                         'expects': 'DENIED'
                     },
                     {
