@@ -53,7 +53,7 @@ class ScriptingSectionValidator:
             raise ValueError(f'{where_am_i} must be a list.')
         else:
             for item in value_in:
-                if not isinstance(item, str) or not re.match(r'^/(?:[^\/\0]+\/*)*$', item):
+                if not isinstance(item, str) or not re.match(r'^/[^\0]*$', item):
                     raise ValueError(f'{where_am_i} "{item}" must be a path element.')
             value_out = value_in
         return value_out
